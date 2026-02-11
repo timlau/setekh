@@ -12,7 +12,7 @@ option(COPY_AFTER_BUILD "Copy JUCE Plugins after built" OFF)
 
 # Fetch JUCE from GitHub
 include(cmake/CPM.cmake)
-CPMAddPackage("gh:/juce-framework/JUCE8.0.12")
+CPMAddPackage("gh:/juce-framework/JUCE@8.0.12")
 CPMAddPackage("gh:/free-audio/clap-juce-extensions#main")
 
 option(BUILD_STANDALONE "Standalone plugin format" OFF)
