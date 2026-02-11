@@ -4,7 +4,18 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STR
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13 CACHE STRING "Build for 10.13")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-option(BUILD_STANDALONE "Standalone plugin format" ON)
+# Enable compile commands export for IDEs
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Copy plugins after build option
+option(COPY_AFTER_BUILD "Copy JUCE Plugins after built" OFF)
+
+# Fetch JUCE from GitHub
+include(cmake/CPM.cmake)
+CPMAddPackage("gh:/juce-framework/JUCE#8.0.12")
+CPMAddPackage("gh:/free-audio/clap-juce-extensions#main")
+
+option(BUILD_STANDALONE "Standalone plugin format" OFF)
 
 if(DEFINED ENV{VERSION})
     set(PROJECT_VERSION $ENV{VERSION})
@@ -18,8 +29,6 @@ add_compile_definitions(PROJECT_VERSION="${PROJECT_VERSION}")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_XCODE_GENERATE_SCHEME OFF)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-add_subdirectory(lib/JUCE)
 
 set(plugin_formats
   VST3
@@ -39,7 +48,7 @@ juce_add_plugin(${PROJECT_NAME}
   IS_MIDI_EFFECT FALSE
   EDITOR_WANTS_KEYBOARD_FOCUS FALSE
   JUCE_VST3_CAN_REPLACE_VST2 FALSE
-  COPY_PLUGIN_AFTER_BUILD TRUE
+  COPY_PLUGIN_AFTER_BUILD ${COPY_AFTER_BUILD}
   PLUGIN_MANUFACTURER_CODE FFXM
   PLUGIN_CODE SETK
   FORMATS ${plugin_formats}
@@ -48,6 +57,11 @@ juce_add_plugin(${PROJECT_NAME}
   LV2URI "https://fullfxmedia.com/plugins/diffusia"
   BUNDLE_ID "com.fullfxmedia.setekh"
 )
+
+# ==================== CLAP =======================
+clap_juce_extensions_plugin(TARGET ${PROJECT_NAME}
+        CLAP_ID "om.fullfxmedia.setekh"
+        CLAP_FEATURES effect "distortion ")
 
 file(GLOB_RECURSE src
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h"
@@ -100,3 +114,8 @@ target_link_libraries(${PROJECT_NAME}
 if(APPLE)
     target_compile_definitions(${PROJECT_NAME} PUBLIC JUCE_AU=1)
 endif()
+
+# ==================== Installation of plugins (Linux) =======================
+if(LINUX)
+    include(cmake/LinuxInstall.cmake)
+endif(LINUX)
